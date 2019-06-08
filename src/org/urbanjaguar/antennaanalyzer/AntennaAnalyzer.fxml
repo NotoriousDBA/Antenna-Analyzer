@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="TOP_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.urbanjaguar.antennaanalyzer.AnalyzerController">
+   <children>
+      <MenuBar maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minWidth="-Infinity" VBox.vgrow="NEVER">
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem fx:id="menuExit" mnemonicParsing="false" text="Exit" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Analyzer">
+            <items>
+              <MenuItem fx:id="menuConnect" mnemonicParsing="false" text="Connect" onAction="#Connect"/>
+              <MenuItem mnemonicParsing="false" text="Preferences" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Help">
+            <items>
+              <MenuItem mnemonicParsing="false" text="About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="300.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+        <tabs>
+          <Tab fx:id="tabControlPanel" closable="false" text="Control Panel">
+               <content>
+                  <Pane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <Label layoutX="14.0" layoutY="14.0" text="Bands">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                        </Label>
+                        <CheckBox fx:id="cbAllBands" layoutX="14.0" layoutY="50.0" mnemonicParsing="false" onMouseClicked="#AllBandsClick" text="All Bands">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font>
+                        </CheckBox>
+                        <CheckBox fx:id="cb10m" layoutX="14.0" layoutY="85.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="10 meters" />
+                        <CheckBox fx:id="cb12m" layoutX="14.0" layoutY="110.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="12 meters" />
+                        <CheckBox fx:id="cb15m" layoutX="14.0" layoutY="135.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="15 meters" />
+                        <CheckBox fx:id="cb17m" layoutX="14.0" layoutY="160.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="17 meters" />
+                        <CheckBox fx:id="cb20m" layoutX="14.0" layoutY="185.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="20 meters" />
+                        <CheckBox fx:id="cb30m" layoutX="14.0" layoutY="210.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="30 meters" />
+                        <CheckBox fx:id="cb40m" layoutX="14.0" layoutY="235.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="40 meters" />
+                        <CheckBox fx:id="cb60m" layoutX="14.0" layoutY="260.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="60 meters" />
+                        <CheckBox fx:id="cb80m" layoutX="14.0" layoutY="285.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="80 meters" />
+                        <CheckBox fx:id="cb160m" layoutX="14.0" layoutY="310.0" mnemonicParsing="false" onMouseClicked="#BandClick" text="160 meters" />
+                        <CheckBox fx:id="cbCustom" layoutX="14.0" layoutY="345.0" mnemonicParsing="false" onAction="#CustomAction" text="Custom">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font>
+                        </CheckBox>
+                        <TextField fx:id="lowFreq" disable="true" layoutX="14.0" layoutY="375.0" prefWidth="135.0" promptText="Lower Freq (MHz)" />
+                        <TextField fx:id="highFreq" disable="true" layoutX="160.0" layoutY="375.0" prefWidth="135.0" promptText="Upper Freq (MHz)" />
+                        <Label layoutX="149.0" layoutY="14.0" text="Steps per Band">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="numSteps" layoutX="149.0" layoutY="47.0" prefHeight="25.0" prefWidth="67.0" />
+                        <Button fx:id="btnReset" layoutX="228.0" layoutY="47.0" mnemonicParsing="false" text="Reset" />
+                        <Button fx:id="btnStart" disable="true" layoutX="14.0" layoutY="435.0" mnemonicParsing="false" text="Start Sweep" />
+                        <TextArea fx:id="analyzerLog" editable="false" layoutX="315.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="470.0" prefWidth="470.0" />
+                     </children>
+                  </Pane>
+               </content></Tab>
+          <Tab fx:id="tabSummary" closable="false" disable="true" text="Summary" />
+        </tabs>
+      </TabPane>
+      <HBox alignment="CENTER_LEFT" fillHeight="false" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="30.0" VBox.vgrow="NEVER">
+         <children>
+            <Label fx:id="lblStatus" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="200.0" HBox.hgrow="NEVER">
+               <padding>
+                  <Insets left="5.0" right="5.0" />
+               </padding></Label>
+            <ProgressBar fx:id="progress" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" progress="0.0" HBox.hgrow="ALWAYS" />
+         </children>
+         <padding>
+            <Insets left="5.0" right="5.0" />
+         </padding>
+      </HBox>
+   </children>
+</VBox>
