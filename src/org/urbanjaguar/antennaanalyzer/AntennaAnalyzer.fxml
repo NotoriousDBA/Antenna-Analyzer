@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.chart.*?>
 <?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
@@ -19,7 +20,7 @@
           </Menu>
           <Menu mnemonicParsing="false" text="Analyzer">
             <items>
-              <MenuItem fx:id="menuConnect" mnemonicParsing="false" text="Connect" onAction="#Connect"/>
+              <MenuItem fx:id="menuConnect" mnemonicParsing="false" onAction="#Connect" text="Connect" />
               <MenuItem mnemonicParsing="false" text="Preferences" />
             </items>
           </Menu>
@@ -30,7 +31,7 @@
           </Menu>
         </menus>
       </MenuBar>
-      <TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="300.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+      <TabPane fx:id="tabPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="300.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
         <tabs>
           <Tab fx:id="tabControlPanel" closable="false" text="Control Panel">
                <content>
@@ -69,8 +70,8 @@
                            </font>
                         </Label>
                         <TextField fx:id="numSteps" layoutX="149.0" layoutY="47.0" prefHeight="25.0" prefWidth="67.0" />
-                        <Button fx:id="btnReset" layoutX="228.0" layoutY="47.0" mnemonicParsing="false" text="Reset" />
-                        <Button fx:id="btnStart" disable="true" layoutX="14.0" layoutY="435.0" mnemonicParsing="false" text="Start Sweep" />
+                        <Button fx:id="btnReset" layoutX="228.0" layoutY="47.0" mnemonicParsing="false" onMouseClicked="#ResetClick" text="Reset" />
+                        <Button fx:id="btnStart" disable="true" layoutX="14.0" layoutY="435.0" mnemonicParsing="false" onMouseClicked="#StartClick" text="Start Sweep" />
                         <TextArea fx:id="analyzerLog" editable="false" layoutX="315.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="470.0" prefWidth="470.0" />
                      </children>
                   </Pane>
