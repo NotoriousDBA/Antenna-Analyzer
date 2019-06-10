@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="461.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.urbanjaguar.antennaanalyzer.PrefDialogController">
+   <children>
+      <Label layoutX="36.0" layoutY="45.0" text="Default Number of Steps" AnchorPane.leftAnchor="36.0" AnchorPane.topAnchor="45.0" />
+      <TextField fx:id="numSteps" layoutX="36.0" layoutY="72.0" prefHeight="39.0" prefWidth="102.0" AnchorPane.leftAnchor="36.0" AnchorPane.topAnchor="72.0" />
+      <Label layoutX="36.0" layoutY="121.0" text="Name Reported by MCU" AnchorPane.leftAnchor="36.0" AnchorPane.topAnchor="121.0" />
+      <TextField fx:id="mcuName" layoutX="36.0" layoutY="148.0" prefHeight="39.0" prefWidth="298.0" AnchorPane.leftAnchor="36.0" AnchorPane.topAnchor="148.0" />
+      <Button fx:id="btnSave" onMouseClicked="#SaveClick" layoutX="36.0" layoutY="375.0" mnemonicParsing="false" text="Save" />
+      <Button fx:id="btnCancel" onMouseClicked="#CancelClick" layoutX="135.0" layoutY="375.0" mnemonicParsing="false" text="Cancel" />
+      <TextArea editable="false" layoutX="35.0" layoutY="194.0" prefHeight="125.0" prefWidth="534.0" text="If the MCU used in your analyzer does not identify itself to the system as &quot;SparkFun Pro Micro&quot;, then you must enter the name it reports here, otherwise the application will not recognize it as a K6BEZ antenna analyzer. If you are unsure how your MCU identifies itself, connect your analyzer to the system, start the application, and look at the results of the port scan in the log window on the right hand side of the control panel tab. One of the ports identified should be your analyzer." wrapText="true">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </TextArea>
+   </children>
+</AnchorPane>

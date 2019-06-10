@@ -4,8 +4,10 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -13,14 +15,17 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Properties;
 
 import static org.urbanjaguar.antennaanalyzer.Bands.BAND_LABEL;
+import static org.urbanjaguar.antennaanalyzer.PlatformHelper.run;
 
 public class AnalyzerController implements StatusListener, LogListener, DataListener {
     private static final String CONFIGFILE = "analyzer.config";
@@ -32,6 +37,7 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     public MenuItem menuConnect;
     public TabPane tabPane;
     public MenuBar menuBar;
+    public MenuItem menuPrefs;
     private Analyzer analyzer;
     public Button btnStart, btnReset, btnClear;
     private int numBands = 0;
@@ -44,7 +50,13 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     private Hashtable<Bands.BAND,SweepInfo> bandSweepInfo = new Hashtable<>();
     private Bands.BAND activeBand;
     public CheckBox cbAllBands, cb10m, cb12m, cb15m, cb17m, cb20m, cb30m, cb40m, cb60m, cb80m, cb160m, cbCustom;
-    private Properties config;
+    static Properties config;
+
+    private static void handle(TableColumn.CellEditEvent<BandSweepInfo, String> t) {
+        ((BandSweepInfo) t.getTableView().getItems().get(
+                t.getTablePosition().getRow())
+        ).setRunNumber(t.getNewValue());
+    }
 
     private Tab chartFactory(Bands.BAND band) {
         float lowFreq, highFreq;
@@ -94,12 +106,12 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         return bandTab;
     }
 
-    private void getDefaultConfig(Properties config) {
+    private static void getDefaultConfig(Properties config) {
         config.setProperty("NUMSTEPS", "100");
         config.setProperty("PORTDESCRIPTION", "SparkFun Pro Micro");
     }
 
-    private void loadConfig() {
+    private static void loadConfig() {
         config = new Properties();
         getDefaultConfig(config);
 
@@ -111,6 +123,19 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
             // do nothing
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Error reading " + CONFIGFILE + ": \n" + e.toString(),ButtonType.CLOSE);
+            alert.showAndWait();
+        }
+    }
+
+    static void saveConfig() {
+        try {
+            FileOutputStream out = new FileOutputStream(CONFIGFILE);
+            config.store(out,null);
+            out.close();
+        } catch (FileNotFoundException e) {
+           // do nothing
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Error writing " + CONFIGFILE + ": \n" + e.toString(),ButtonType.CLOSE);
             alert.showAndWait();
         }
     }
@@ -164,14 +189,7 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         tcRun.setEditable(true);
         tcRun.setCellFactory(TextFieldTableCell.forTableColumn());
         tcRun.setOnEditCommit(
-            new EventHandler<TableColumn.CellEditEvent<BandSweepInfo, String>>() {
-                @Override
-                public void handle(TableColumn.CellEditEvent<BandSweepInfo, String> t) {
-                    ((BandSweepInfo) t.getTableView().getItems().get(
-                        t.getTablePosition().getRow())
-                        ).setRunNumber(t.getNewValue());
-                }
-            }
+                AnalyzerController::handle
         );
 
         tcBand = new TableColumn<>("Band");
@@ -199,13 +217,13 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
 
     @Override
     public void logReceived(LogEvent event) {
-        PlatformHelper.run(() -> {
+        run(() -> {
             analyzerLog.appendText(event.message());
         });
     }
 
     private void updateStatus (String status) {
-        PlatformHelper.run(() -> {
+        run(() -> {
             lblStatus.setText(status);
         });
     }
@@ -283,7 +301,7 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     }
 
     public void Connect(ActionEvent actionEvent) {
-        analyzer.connect();
+        analyzer.connect(config.getProperty("PORTDESCRIPTION"));
     }
 
     @Override
@@ -292,7 +310,7 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         freq = event.data().getFrequency();
         vswr = event.data().getVSWR();
         bandSweepInfo.get(activeBand).update(freq, vswr);
-        PlatformHelper.run(() -> {
+        run(() -> {
             bandSeries.get(activeBand).getData().add(new XYChart.Data<>(freq, vswr));
         });
     }
@@ -401,6 +419,24 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         tabSummary.setDisable(true);
         runCount = 0;
         tabPane.getSelectionModel().select(0);
+    }
+
+    public void MenuExit(ActionEvent actionEvent) {
+        Stage stage = (Stage) menuBar.getScene().getWindow();
+        stage.close();
+    }
+
+    public void EditPrefs(ActionEvent actionEvent) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("PrefDialog.fxml"));
+            Parent dialogRoot = fxmlLoader.load();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(dialogRoot));
+            stage.show();
+            numSteps.setText(config.getProperty("NUMSTEPS"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static class BandSweepInfo {

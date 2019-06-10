@@ -15,13 +15,13 @@
         <menus>
           <Menu mnemonicParsing="false" text="File">
             <items>
-              <MenuItem fx:id="menuExit" mnemonicParsing="false" text="Exit" />
+              <MenuItem fx:id="menuExit" onAction="#MenuExit" mnemonicParsing="false" text="Exit" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Analyzer">
             <items>
               <MenuItem fx:id="menuConnect" mnemonicParsing="false" onAction="#Connect" text="Connect" />
-              <MenuItem mnemonicParsing="false" text="Preferences" />
+              <MenuItem fx:id="menuPrefs" mnemonicParsing="false" onAction="#EditPrefs" text="Preferences" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">

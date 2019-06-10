@@ -82,7 +82,20 @@ public class Analyzer {
         fireStatusEvent();
     }
 
+    synchronized void connect (String portDescription) {
+        this.portDescription = portDescription;
+        connect();
+    }
     synchronized void connect() {
+        if (analyzer != null) {
+            try {
+                analyzer.closePort();
+            } catch (Exception e) {
+                // Ignore
+            }
+            analyzer = null;
+        }
+
         // Look for an analyzer connect to the system.
         analyzer = findAnalyzer();
 
