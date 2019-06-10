@@ -20,19 +20,20 @@ import static org.urbanjaguar.antennaanalyzer.Bands.BAND_LABEL;
 
 public class AnalyzerController implements StatusListener, LogListener, DataListener {
     private static final String CONFIGFILE = "analyzer.config";
-    private int stepCount;
+    public TableView<String> tblSummary;
+    public TableColumn<String,String> tc10m, tc12m, tc15m, tc17m, tc20m, tc30m, tc40m, tc60m, tc80m, tc160m, tcCustom;
     public Label lblStatus;
-    public ProgressBar progress;
     public TextArea analyzerLog;
     public TextField numSteps, highFreq, lowFreq;
     public MenuItem menuConnect;
     public TabPane tabPane;
     public MenuBar menuBar;
     private Analyzer analyzer;
-    public Button btnStart, btnReset;
+    public Button btnStart, btnReset, btnClear;
     private int numBands = 0;
     public Tab tabControlPanel, tabSummary;
     public MenuItem menuExit;
+    private Hashtable<Bands.BAND,TableColumn<String,String>> bandColumns;
     private Hashtable<Bands.BAND,CheckBox> bandList;
     private Hashtable<Bands.BAND,Tab> bandTabs;
     private Hashtable<Bands.BAND,XYChart.Series<Number,Number>> bandSeries = new Hashtable<>();
@@ -60,7 +61,7 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
 
         freqAxis.setLabel("Frequency/MHz");
         freqAxis.setAnimated(false); // axis animations are removed
-        vswrAxis.setLabel("VSWR");
+        vswrAxis.setLabel("SWR");
         vswrAxis.setAnimated(false); // axis animations are removed
 
         XYChart.Series<Number,Number> data = new XYChart.Series<>();
@@ -74,9 +75,9 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         bandChart.setLegendVisible(false);
 
         if (band == Bands.BAND.CUSTOM) {
-            bandChart.setTitle("VSWR from " + lowFreq + "MHz to " + highFreq + "MHz");
+            bandChart.setTitle("SWR from " + lowFreq + "MHz to " + highFreq + "MHz");
         } else {
-            bandChart.setTitle("VSWR on the " + BAND_LABEL.get(band) + " Band");
+            bandChart.setTitle("SWR on the " + BAND_LABEL.get(band) + " Band");
         }
 
         // Create the tab for the chart.
@@ -126,6 +127,19 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
             put(Bands.BAND.BAND160M, cb160m);
             put(Bands.BAND.CUSTOM, cbCustom);
         }};
+        bandColumns = new Hashtable<Bands.BAND,TableColumn<String, String>>() {{
+            put(Bands.BAND.BAND10M, tc10m);
+            put(Bands.BAND.BAND12M, tc12m);
+            put(Bands.BAND.BAND15M, tc15m);
+            put(Bands.BAND.BAND17M, tc17m);
+            put(Bands.BAND.BAND20M, tc20m);
+            put(Bands.BAND.BAND30M, tc30m);
+            put(Bands.BAND.BAND40M, tc40m);
+            put(Bands.BAND.BAND60M, tc60m);
+            put(Bands.BAND.BAND80M, tc80m);
+            put(Bands.BAND.BAND160M, tc160m);
+            put(Bands.BAND.CUSTOM, tcCustom);
+        }};
         bandTabs = new Hashtable<>();
         activeBand = null;
         analyzer = new Analyzer(config.getProperty("PORTDESCRIPTION"));
@@ -133,6 +147,24 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         analyzer.addStatusListener(this);
         analyzer.addDataListener(this);
         analyzer.connect();
+
+        lowFreq.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d{0,2}([\\.]\\d{0,6})?")) {
+                lowFreq.setText(oldValue);
+            }
+        });
+
+        highFreq.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d{0,2}([\\.]\\d{0,6})?")) {
+                highFreq.setText(oldValue);
+            }
+        });
+
+        numSteps.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d{1,4}")) {
+                numSteps.setText(oldValue);
+            }
+        });
     }
 
     @Override
@@ -145,10 +177,9 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     private void updateStatus (String status) {
         PlatformHelper.run(() -> {
             lblStatus.setText(status);
-            progress.setProgress(0.0d);
         });
-        stepCount = 0;
     }
+
     @Override
     public void StatusReceived(StatusEvent event) {
         switch (event.status().toString()) {
@@ -231,7 +262,6 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         freq = event.data().getFrequency();
         vswr = event.data().getVSWR();
         PlatformHelper.run(() -> {
-            progress.setProgress(((double)++stepCount)/Double.parseDouble(numSteps.getText()));
             bandSeries.get(activeBand).getData().add(new XYChart.Data<>(freq, vswr));
         });
     }
