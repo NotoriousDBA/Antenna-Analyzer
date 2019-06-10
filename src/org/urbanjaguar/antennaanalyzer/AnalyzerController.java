@@ -1,5 +1,7 @@
 package org.urbanjaguar.antennaanalyzer;
 
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
@@ -14,14 +16,18 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Properties;
 
+import static org.urbanjaguar.antennaanalyzer.Bands.BAND_LABEL;
+
 public class AnalyzerController implements StatusListener, LogListener, DataListener {
     private static final String CONFIGFILE = "analyzer.config";
+    private int stepCount;
     public Label lblStatus;
     public ProgressBar progress;
     public TextArea analyzerLog;
     public TextField numSteps, highFreq, lowFreq;
     public MenuItem menuConnect;
     public TabPane tabPane;
+    public MenuBar menuBar;
     private Analyzer analyzer;
     public Button btnStart, btnReset;
     private int numBands = 0;
@@ -35,20 +41,20 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     private Properties config;
 
     private Tab chartFactory(Bands.BAND band) {
+        float lowFreq, highFreq;
+
         // Create the axes for the chart.
         NumberAxis freqAxis;
 
         if (band == Bands.BAND.CUSTOM) {
-            freqAxis = new NumberAxis(
-                    Float.parseFloat(lowFreq.getText()),
-                    Float.parseFloat(highFreq.getText()),
-                    .0005f);
+            lowFreq = Float.parseFloat(this.lowFreq.getText());
+            highFreq = Float.parseFloat(this.highFreq.getText());
         } else {
-            freqAxis = new NumberAxis(
-                    Bands.BAND_LOWER_FREQ.get(band),
-                    Bands.BAND_UPPER_FREQ.get(band),
-                   .05f);
+            lowFreq = Bands.BAND_LOWER_FREQ.get(band);
+            highFreq = Bands.BAND_UPPER_FREQ.get(band);
         }
+
+        freqAxis = new NumberAxis(lowFreq, highFreq, (highFreq - lowFreq)/20);
 
         NumberAxis vswrAxis = new NumberAxis(1.0f, 5.0f, .25);
 
@@ -68,13 +74,13 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         bandChart.setLegendVisible(false);
 
         if (band == Bands.BAND.CUSTOM) {
-            bandChart.setTitle("VSWR from " + lowFreq + " to " + highFreq);
+            bandChart.setTitle("VSWR from " + lowFreq + "MHz to " + highFreq + "MHz");
         } else {
-            bandChart.setTitle("VSWR on the " + Bands.BAND_LABEL.get(band) + " Band");
+            bandChart.setTitle("VSWR on the " + BAND_LABEL.get(band) + " Band");
         }
 
         // Create the tab for the chart.
-        Tab bandTab = new Tab(Bands.BAND_LABEL.get(band));
+        Tab bandTab = new Tab(BAND_LABEL.get(band));
         bandTab.setContent(bandChart);
         bandTab.setClosable(false);
         bandTab.setDisable(false);
@@ -131,23 +137,32 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
 
     @Override
     public void logReceived(LogEvent event) {
-        analyzerLog.appendText(event.message());
+        PlatformHelper.run(() -> {
+            analyzerLog.appendText(event.message());
+        });
     }
 
+    private void updateStatus (String status) {
+        PlatformHelper.run(() -> {
+            lblStatus.setText(status);
+            progress.setProgress(0.0d);
+        });
+        stepCount = 0;
+    }
     @Override
     public void StatusReceived(StatusEvent event) {
         switch (event.status().toString()) {
             case "CONNECTED":
-                lblStatus.setText("Analyzer Connected");
+                updateStatus("Analyzer Connected");
                 break;
             case "DISCONNECTED":
-                lblStatus.setText("Analyzer Not Connected");
+                updateStatus("Analyzer Not Connected");
                 break;
             case "START":
-                lblStatus.setText("Sweep Started");
+                updateStatus("Sweep Started");
                 break;
             case "STOP":
-                lblStatus.setText("Sweep Finished");
+                updateStatus("Sweep Finished");
                 break;
         }
     }
@@ -215,7 +230,78 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         double freq, vswr;
         freq = event.data().getFrequency();
         vswr = event.data().getVSWR();
-        bandSeries.get(activeBand).getData().add(new XYChart.Data<>(freq, vswr));
+        PlatformHelper.run(() -> {
+            progress.setProgress(((double)++stepCount)/Double.parseDouble(numSteps.getText()));
+            bandSeries.get(activeBand).getData().add(new XYChart.Data<>(freq, vswr));
+        });
+    }
+
+    private void preSweep () {
+        // Disable all of the controls that should be disabled during a sweep.
+        btnStart.setDisable(true);
+        cbAllBands.setDisable(true);
+        for (CheckBox bandBox: bandList.values()) {
+            bandBox.setDisable(true);
+        }
+        menuBar.setDisable(true);
+        numSteps.setDisable(true);
+        btnReset.setDisable(true);
+        lowFreq.setDisable(true);
+        highFreq.setDisable(true);
+
+        // Remove all existing band tabs.
+        for (Tab bandTab:bandTabs.values()) {
+            bandTab.setClosable(true);
+            tabPane.getTabs().remove(bandTab);
+        }
+        bandTabs.clear();
+    }
+
+    private void runSweep() {
+        Platform.runLater(this::preSweep);
+        for (Bands.BAND band: Bands.BAND.values()) {
+            if (bandList.get(band).isSelected()) {
+                activeBand = band;
+
+                Platform.runLater(() -> {
+                    Tab bandTab = chartFactory(band);
+                    bandTabs.put(band, bandTab);
+                    tabPane.getTabs().add(bandTab);
+                    tabPane.getSelectionModel().select(bandTab);
+                });
+
+                // Run the sweep for this band.
+                if (band == Bands.BAND.CUSTOM) {
+                    analyzer.sweep(
+                            Float.parseFloat(lowFreq.getText()),
+                            Float.parseFloat(highFreq.getText()),
+                            Integer.parseInt(numSteps.getText()));
+                } else {
+                    analyzer.sweep(
+                            Bands.BAND_LOWER_FREQ.get(band),
+                            Bands.BAND_UPPER_FREQ.get(band),
+                            Integer.parseInt(numSteps.getText()));
+                }
+
+                if (!analyzer.isConnected()) {
+                    break;
+                }
+            }
+        }
+        Platform.runLater(this::postSweep);
+    }
+
+    private void postSweep () {
+        // Re-enable controls after a sweep.
+        btnStart.setDisable(false);
+        cbAllBands.setDisable(false);
+        for (CheckBox bandBox: bandList.values()) {
+            bandBox.setDisable(false);
+        }
+        btnReset.setDisable(false);
+        menuBar.setDisable(false);
+        numSteps.setDisable(false);
+        CustomAction(null);
     }
 
     public void ResetClick(MouseEvent mouseEvent) {
@@ -223,36 +309,15 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     }
 
     public void StartClick(MouseEvent mouseEvent) {
-        // Run a sweep.
-        btnStart.setDisable(true);
-
         if (analyzer.isConnected()) {
-            for (Bands.BAND band: Bands.BAND.values()) {
-                if (bandList.get(band).isSelected()) {
-                    activeBand = band;
-                    Tab bandTab = chartFactory(band);
-                    bandTabs.put(band, bandTab);
-                    tabPane.getTabs().add(bandTab);
-                    tabPane.getSelectionModel().select(bandTab);
-
-                    // Run the sweep for this band.
-                    if (band == Bands.BAND.CUSTOM) {
-                        analyzer.sweep(
-                                Float.parseFloat(lowFreq.getText()),
-                                Float.parseFloat(highFreq.getText()),
-                                Integer.parseInt(numSteps.getText()));
-                    } else {
-                        analyzer.sweep(
-                                Bands.BAND_LOWER_FREQ.get(band),
-                                Bands.BAND_UPPER_FREQ.get(band),
-                                Integer.parseInt(numSteps.getText()));
-                    }
-
-                    if (!analyzer.isConnected()) {
-                        break;
-                    }
+            Task<Void> sweep = new Task<Void>() {
+                @Override
+                public Void call() {
+                    runSweep();
+                    return null;
                 }
-            }
+            };
+            new Thread(sweep).start();
         }
     }
 }

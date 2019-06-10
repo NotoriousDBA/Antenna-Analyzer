@@ -9,27 +9,17 @@ import static org.urbanjaguar.antennaanalyzer.Bands.BAND.*;
  */
 public class Bands {
     public enum BAND {
-        BAND10M (0),
-        BAND12M (1),
-        BAND15M (2),
-        BAND17M (3),
-        BAND20M (4),
-        BAND30M (5),
-        BAND40M (6),
-        BAND60M (7),
-        BAND80M (8),
-        BAND160M (9),
-        CUSTOM (10);
-
-        private final int value;
-
-        private BAND (int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
+        BAND10M,
+        BAND12M,
+        BAND15M,
+        BAND17M,
+        BAND20M,
+        BAND30M,
+        BAND40M,
+        BAND60M,
+        BAND80M,
+        BAND160M,
+        CUSTOM
     }
 
     public static final Hashtable<BAND,String> BAND_LABEL = new Hashtable<BAND,String>() {{
