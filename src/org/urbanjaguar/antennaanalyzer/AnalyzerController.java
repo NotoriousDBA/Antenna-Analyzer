@@ -1,13 +1,17 @@
 package org.urbanjaguar.antennaanalyzer;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.MouseEvent;
 
 import java.io.FileInputStream;
@@ -20,8 +24,8 @@ import static org.urbanjaguar.antennaanalyzer.Bands.BAND_LABEL;
 
 public class AnalyzerController implements StatusListener, LogListener, DataListener {
     private static final String CONFIGFILE = "analyzer.config";
-    public TableView<String> tblSummary;
-    public TableColumn<String,String> tc10m, tc12m, tc15m, tc17m, tc20m, tc30m, tc40m, tc60m, tc80m, tc160m, tcCustom;
+    public TableView<BandSweepInfo> tblSummary;
+    public TableColumn<BandSweepInfo,String> tcRun, tcBand, tcLow, tcLowSWR, tcLowSWRFreq, tcHigh, tcHighSWR, tcHighSWRFreq, tcAverageSWR;
     public Label lblStatus;
     public TextArea analyzerLog;
     public TextField numSteps, highFreq, lowFreq;
@@ -31,12 +35,13 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
     private Analyzer analyzer;
     public Button btnStart, btnReset, btnClear;
     private int numBands = 0;
+    private int runCount = 0;
     public Tab tabControlPanel, tabSummary;
     public MenuItem menuExit;
-    private Hashtable<Bands.BAND,TableColumn<String,String>> bandColumns;
     private Hashtable<Bands.BAND,CheckBox> bandList;
     private Hashtable<Bands.BAND,Tab> bandTabs;
     private Hashtable<Bands.BAND,XYChart.Series<Number,Number>> bandSeries = new Hashtable<>();
+    private Hashtable<Bands.BAND,SweepInfo> bandSweepInfo = new Hashtable<>();
     private Bands.BAND activeBand;
     public CheckBox cbAllBands, cb10m, cb12m, cb15m, cb17m, cb20m, cb30m, cb40m, cb60m, cb80m, cb160m, cbCustom;
     private Properties config;
@@ -127,19 +132,6 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
             put(Bands.BAND.BAND160M, cb160m);
             put(Bands.BAND.CUSTOM, cbCustom);
         }};
-        bandColumns = new Hashtable<Bands.BAND,TableColumn<String, String>>() {{
-            put(Bands.BAND.BAND10M, tc10m);
-            put(Bands.BAND.BAND12M, tc12m);
-            put(Bands.BAND.BAND15M, tc15m);
-            put(Bands.BAND.BAND17M, tc17m);
-            put(Bands.BAND.BAND20M, tc20m);
-            put(Bands.BAND.BAND30M, tc30m);
-            put(Bands.BAND.BAND40M, tc40m);
-            put(Bands.BAND.BAND60M, tc60m);
-            put(Bands.BAND.BAND80M, tc80m);
-            put(Bands.BAND.BAND160M, tc160m);
-            put(Bands.BAND.CUSTOM, tcCustom);
-        }};
         bandTabs = new Hashtable<>();
         activeBand = null;
         analyzer = new Analyzer(config.getProperty("PORTDESCRIPTION"));
@@ -165,6 +157,44 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
                 numSteps.setText(oldValue);
             }
         });
+
+        tblSummary.setEditable(true);
+
+        tcRun = new TableColumn<>("Run");
+        tcRun.setEditable(true);
+        tcRun.setCellFactory(TextFieldTableCell.forTableColumn());
+        tcRun.setOnEditCommit(
+            new EventHandler<TableColumn.CellEditEvent<BandSweepInfo, String>>() {
+                @Override
+                public void handle(TableColumn.CellEditEvent<BandSweepInfo, String> t) {
+                    ((BandSweepInfo) t.getTableView().getItems().get(
+                        t.getTablePosition().getRow())
+                        ).setRunNumber(t.getNewValue());
+                }
+            }
+        );
+
+        tcBand = new TableColumn<>("Band");
+        tcLow = new TableColumn<>("Low SWR");
+        tcLowSWR = new TableColumn<>("SWR");
+        tcLowSWRFreq = new TableColumn<>("Frequency");
+        tcHigh = new TableColumn<>("High SWR");
+        tcHighSWR = new TableColumn<>("SWR");
+        tcHighSWRFreq = new TableColumn<>("Frequency");
+        tcAverageSWR = new TableColumn<>("Average SWR");
+
+        tcRun.setCellValueFactory(new PropertyValueFactory<>("runNumber"));
+        tcBand.setCellValueFactory(new PropertyValueFactory<>("bandName"));
+        tcLowSWR.setCellValueFactory(new PropertyValueFactory<>("lowSWR"));
+        tcLowSWRFreq.setCellValueFactory(new PropertyValueFactory<>("lowSWRFreq"));
+        tcHighSWR.setCellValueFactory(new PropertyValueFactory<>("highSWR"));
+        tcHighSWRFreq.setCellValueFactory(new PropertyValueFactory<>("highSWRFreq"));
+        tcAverageSWR.setCellValueFactory(new PropertyValueFactory<>("averageSWR"));
+
+        tcLow.getColumns().addAll(tcLowSWR, tcLowSWRFreq);
+        tcHigh.getColumns().addAll(tcHighSWR, tcHighSWRFreq);
+
+        tblSummary.getColumns().addAll(tcRun, tcBand, tcLow, tcHigh, tcAverageSWR);
     }
 
     @Override
@@ -258,9 +288,10 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
 
     @Override
     public void dataReceived(DataEvent event) {
-        double freq, vswr;
+        float freq, vswr;
         freq = event.data().getFrequency();
         vswr = event.data().getVSWR();
+        bandSweepInfo.get(activeBand).update(freq, vswr);
         PlatformHelper.run(() -> {
             bandSeries.get(activeBand).getData().add(new XYChart.Data<>(freq, vswr));
         });
@@ -293,6 +324,8 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
             if (bandList.get(band).isSelected()) {
                 activeBand = band;
 
+                bandSweepInfo.put(band, new SweepInfo());
+
                 Platform.runLater(() -> {
                     Tab bandTab = chartFactory(band);
                     bandTabs.put(band, bandTab);
@@ -316,9 +349,12 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
                 if (!analyzer.isConnected()) {
                     break;
                 }
+            } else {
+                bandSweepInfo.remove(band);
             }
         }
         Platform.runLater(this::postSweep);
+        if (analyzer.isConnected()) ++runCount;
     }
 
     private void postSweep () {
@@ -332,6 +368,15 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         menuBar.setDisable(false);
         numSteps.setDisable(false);
         CustomAction(null);
+        // Populate data in table on summary tab.
+        if (analyzer.isConnected()) {
+            tabSummary.setDisable(false);
+            for (Bands.BAND band : Bands.BAND.values()) {
+                if (bandSweepInfo.containsKey(band) && bandSweepInfo.get(band).isValid()) {
+                    tblSummary.getItems().add(new BandSweepInfo(runCount, band, bandSweepInfo.get(band)));
+                }
+            }
+        }
     }
 
     public void ResetClick(MouseEvent mouseEvent) {
@@ -348,6 +393,89 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
                 }
             };
             new Thread(sweep).start();
+        }
+    }
+
+    public void ClearClick(MouseEvent mouseEvent) {
+        tblSummary.getItems().clear();
+        tabSummary.setDisable(true);
+        runCount = 0;
+        tabPane.getSelectionModel().select(0);
+    }
+
+    public static class BandSweepInfo {
+        private final SimpleStringProperty runNumber;
+        private final SimpleStringProperty bandName;
+        private final SimpleStringProperty lowSWR;
+        private final SimpleStringProperty lowSWRFreq;
+        private final SimpleStringProperty highSWR;
+        private final SimpleStringProperty highSWRFreq;
+        private final SimpleStringProperty averageSWR;
+
+        private BandSweepInfo (int runNumber, Bands.BAND band, SweepInfo sweepInfo) {
+            this.runNumber = new SimpleStringProperty(Integer.toString(runNumber));
+            this.bandName = new SimpleStringProperty(Bands.BAND_LABEL.get(band));
+            this.lowSWR = new SimpleStringProperty(String.format("%1.2f:1", sweepInfo.getLowSWR()));
+            this.lowSWRFreq = new SimpleStringProperty(String.format("%2.6f", sweepInfo.getLowSWRFreq()));
+            this.highSWR = new SimpleStringProperty(String.format("%1.2f:1", sweepInfo.getHighSWR()));
+            this.highSWRFreq = new SimpleStringProperty(String.format("%2.6f", sweepInfo.getHighSWRFreq()));
+            this.averageSWR = new SimpleStringProperty(String.format("%1.2f:1", sweepInfo.getAverageSWR()));
+        }
+
+        public String getRunNumber() {
+            return runNumber.get();
+        }
+
+        public void setRunNumber(String runNumber) {
+            this.runNumber.set(runNumber);
+        }
+
+        public String getBandName() {
+            return bandName.get();
+        }
+
+        public void setBandName(String bandName) {
+            this.bandName.set(bandName);
+        }
+
+        public String getLowSWR() {
+            return lowSWR.get();
+        }
+
+        public void setLowSWR(String lowSWR) {
+            this.lowSWR.set(lowSWR);
+        }
+
+        public String getLowSWRFreq() {
+            return lowSWRFreq.get();
+        }
+
+        public void setLowSWRFreq(String lowSWRFreq) {
+            this.lowSWRFreq.set(lowSWRFreq);
+        }
+
+        public String getHighSWR() {
+            return highSWR.get();
+        }
+
+        public void setHighSWR(String highSWR) {
+            this.highSWR.set(highSWR);
+        }
+
+        public String getHighSWRFreq() {
+            return highSWRFreq.get();
+        }
+
+        public void setHighSWRFreq(String highSWRFreq) {
+            this.highSWRFreq.set(highSWRFreq);
+        }
+
+        public String getAverageSWR() {
+            return averageSWR.get();
+        }
+
+        public void setAverageSWR(String averageSWR) {
+            this.averageSWR.set(averageSWR);
         }
     }
 }

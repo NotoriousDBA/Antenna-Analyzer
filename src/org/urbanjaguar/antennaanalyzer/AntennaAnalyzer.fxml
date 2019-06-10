@@ -81,26 +81,11 @@
                   <VBox>
                      <children>
                         <TableView fx:id="tblSummary" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-                          <columns>
-                            <TableColumn editable="false" prefWidth="82.0" sortable="false" text="Run" />
-                            <TableColumn editable="false" prefWidth="68.0" sortable="false" text="Band" />
-                              <TableColumn fx:id="tc10m" editable="false" prefWidth="75.0" sortable="false" text="10m" visible="false" />
-                              <TableColumn fx:id="tc12m" editable="false" prefWidth="75.0" sortable="false" text="12m" visible="false" />
-                              <TableColumn fx:id="tc15m" editable="false" prefWidth="75.0" sortable="false" text="15m" visible="false" />
-                              <TableColumn fx:id="tc17m" editable="false" prefWidth="75.0" sortable="false" text="17m" visible="false" />
-                              <TableColumn fx:id="tc20m" editable="false" prefWidth="75.0" sortable="false" text="20m" visible="false" />
-                              <TableColumn fx:id="tc30m" editable="false" prefWidth="75.0" sortable="false" text="30m" visible="false" />
-                              <TableColumn fx:id="tc40m" editable="false" prefWidth="75.0" sortable="false" text="40m" visible="false" />
-                              <TableColumn fx:id="tc60m" editable="false" prefWidth="75.0" sortable="false" text="60m" visible="false" />
-                              <TableColumn fx:id="tc80m" editable="false" prefWidth="75.0" sortable="false" text="80m" visible="false" />
-                              <TableColumn fx:id="tc160m" editable="false" prefWidth="75.0" sortable="false" text="160m" visible="false" />
-                              <TableColumn fx:id="tcCustom" editable="false" prefWidth="75.0" sortable="false" text="Custom" visible="false" />
-                          </columns>
                            <VBox.margin>
                               <Insets right="5.0" />
                            </VBox.margin>
                         </TableView>
-                        <Button fx:id="btnClear" mnemonicParsing="false" text="Clear">
+                        <Button fx:id="btnClear" mnemonicParsing="false" text="Clear" onMouseClicked="#ClearClick">
                            <VBox.margin>
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                            </VBox.margin>
