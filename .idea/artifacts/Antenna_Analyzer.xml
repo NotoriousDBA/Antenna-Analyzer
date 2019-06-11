@@ -1,0 +1,28 @@
+<component name="ArtifactManager">
+  <artifact type="javafx" name="Antenna Analyzer">
+    <output-path>$PROJECT_DIR$/out/artifacts/Antenna_Analyzer</output-path>
+    <properties id="javafx-properties">
+      <options>
+        <option name="appClass" value="org.urbanjaguar.antennaanalyzer.Main" />
+        <option name="description" value="A simple front-end application for controlling a K6BEZ antenna analyzer." />
+        <option name="height" value="600" />
+        <option name="htmlPlaceholderId" value="" />
+        <option name="msgOutputLevel" value="Verbose" />
+        <option name="nativeBundle" value="all" />
+        <option name="title" value="K6BEZ Antenna Analyzer" />
+        <option name="vendor" value="urbanjaguar.org" />
+        <option name="version" value="1.0" />
+        <option name="width" value="800" />
+      </options>
+    </properties>
+    <root id="root">
+      <element id="archive" name="AntennaAnalyzer.jar">
+        <element id="module-output" name="Antenna Analyzer" />
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+        </element>
+      </element>
+      <element id="library" level="project" name="com.fazecast:jSerialComm:2.5.1" />
+    </root>
+  </artifact>
+</component>
