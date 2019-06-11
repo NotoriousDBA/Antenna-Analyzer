@@ -13,6 +13,7 @@ import java.util.Scanner;
  */
 public class Analyzer {
     private SerialPort analyzer;
+    private String portName;
     private String portDescription;
     private Status status;
     private ArrayList<StatusListener> statusListeners;
@@ -100,11 +101,11 @@ public class Analyzer {
         analyzer = findAnalyzer();
 
         if (analyzer != null) {
-            fireLogEvent("found analyzer\nopening port");
+            fireLogEvent("found analyzer on port " + portName + "\nopening port");
             if (analyzer.openPort()) {
                 fireLogEvent("connected");
                 analyzer.setComPortTimeouts(
-                        SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 500, 500);
+                        SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1000, 1000);
                 setStatus(Status.CONNECTED);
             } else {
                 fireLogEvent("open failed!");
@@ -122,7 +123,7 @@ public class Analyzer {
         String portName;
         SerialPort analyzer = null;
 
-        fireLogEvent("starting port scan");
+        fireLogEvent("starting port scan - looking for \"" + portDescription + "\"");
 
         for (SerialPort port: SerialPort.getCommPorts()) {
             portDesc = port.getPortDescription();
@@ -130,6 +131,7 @@ public class Analyzer {
             message = "port: " + portName + " description: " + portDesc;
             if (portDesc.equals(this.portDescription) && analyzer == null) {
                 analyzer = port;
+                this.portName = portName;
                 message = message + " <-----";
             }
             fireLogEvent(message);
