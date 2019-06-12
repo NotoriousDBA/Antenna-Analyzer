@@ -7,6 +7,13 @@
         <option name="description" value="A simple front-end application for controlling a K6BEZ antenna analyzer." />
         <option name="height" value="600" />
         <option name="htmlPlaceholderId" value="" />
+        <option name="icons">
+          <JavaFxApplicationIcons>
+            <option name="linuxIcon" value="$PROJECT_DIR$/src/org/urbanjaguar/antennaanalyzer/analyzer128.png" />
+            <option name="macIcon" value="$PROJECT_DIR$/src/org/urbanjaguar/antennaanalyzer/analyzer.icns" />
+            <option name="windowsIcon" value="$PROJECT_DIR$/src/org/urbanjaguar/antennaanalyzer/analyzer.ico" />
+          </JavaFxApplicationIcons>
+        </option>
         <option name="msgOutputLevel" value="Verbose" />
         <option name="nativeBundle" value="all" />
         <option name="title" value="K6BEZ Antenna Analyzer" />

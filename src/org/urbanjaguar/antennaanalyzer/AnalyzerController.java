@@ -17,10 +17,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Hashtable;
 import java.util.Optional;
 import java.util.Properties;
@@ -113,7 +110,9 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
         getDefaultConfig(config);
 
         try {
-            FileInputStream in = new FileInputStream(CONFIGFILE);
+            File home = new File(System.getProperty("user.home")).getAbsoluteFile();
+            System.setProperty("user.dir", home.getAbsolutePath());
+            FileInputStream in = new FileInputStream(new File(CONFIGFILE).getAbsoluteFile());
             config.load(in);
             in.close();
         } catch (FileNotFoundException e) {
@@ -126,13 +125,18 @@ public class AnalyzerController implements StatusListener, LogListener, DataList
 
     void saveConfig() {
         try {
-            FileOutputStream out = new FileOutputStream(CONFIGFILE);
+            File home = new File(System.getProperty("user.home")).getAbsoluteFile();
+            System.setProperty("user.dir", home.getAbsolutePath());
+            FileOutputStream out = new FileOutputStream(new File(CONFIGFILE).getAbsoluteFile());
             config.store(out,null);
             out.close();
             run(() -> {numSteps.setText(config.getProperty("NUMSTEPS"));});
         } catch (FileNotFoundException e) {
-           // do nothing
+            System.out.println("can't open config file for writing");
+            e.printStackTrace();
         } catch (IOException e) {
+            System.out.println("io exception");
+            e.printStackTrace();
             Alert alert = new Alert(Alert.AlertType.ERROR, "Error writing " + CONFIGFILE + ": \n" + e.toString(),ButtonType.CLOSE);
             alert.showAndWait();
         }
