@@ -22,7 +22,7 @@ Yes. This is a JavaFX application using a cross-platform serial communications l
 
 ## Do I have to build the program myself?
 
-No, but if you want to, you can. You'll need Intellij IDEA, and the Oracle Java 1.8 JDK. If you're a normal person though, installers for Linux (a .deb package) and Windows are available [here](). An installable for MacOSX should be coming soon. Please note that all dependencies, including the appropriate java runtime, are included in the installables. Nothing else should be required.
+No, but if you want to, you can. You'll need Intellij IDEA, and the Oracle Java 1.8 JDK. If you're a normal person though, installers for Linux (a .deb package) and Windows are available [here](https://github.com/NotoriousDBA/Antenna-Analyzer/tree/master/Downloads "Download Directory on GitHub"). An installable for MacOSX should be coming soon. Please note that all dependencies, including the appropriate java runtime, are included in the installables. Nothing else should be required.
 
 ## What is the K6BEZ antenna analyzer?
 
